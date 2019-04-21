@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  connection: local
+
+  tasks:
+    - name: Dont permit root to ssh
+      lineinfile: dest=/etc/ssh/sshd_config
+                  regexp="^PermitRootLogin"
+                  line="PermitRootLogin no"
+                  state=present
+      notify: Restart ssh
+
+  handlers:
+    - name: Restart ssh
+      service: name=sshd state=restarted
