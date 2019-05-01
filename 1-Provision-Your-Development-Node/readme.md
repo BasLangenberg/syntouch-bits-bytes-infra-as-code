@@ -54,8 +54,11 @@ packages:
  - vim
  - ansible
  - git
+ - unzip
 runcmd:
-  - [ snap, install, terraform ]
+  - [ snap, install, doctl, --classic]
+  - [ curl, -o, /usr/bin/terraform, -LO, http://utils.homecooked.nl/terraform ]
+  - [ chmod, ugo+x, /usr/bin/terraform ]
 power_state:
   timeout: 120
   delay: "now"
@@ -176,3 +179,116 @@ localhost                  : ok=2    changed=0    unreachable=0    failed=0
 The playbook run is shorter. It did not update the file because the settings were already as described in the file. It is easy to use Ansible like this to validate the configuration of a server. Because the setting was correct, there was no need for a restart, so the handler was not called!
 
 In the next excercise we will investigate a slightly more complicated situation.
+
+## Secret management
+
+Remember the API key you created during your initial setup? You are going to need it now.
+
+Create a file called .secrets in your home directory.
+
+```
+vim ~/.secrets
+```
+
+Put the following lines in it.
+
+```
+DO_ACCESS_TOKEN=IWONTTELLYOU
+DO_SSH_FINGERPRINT="I ALSO WILL NOT TELL YOU"
+
+export DO_ACCESS_TOKEN
+export DO_SSH_FINGERPRINT
+```
+
+Fill out the Access token your created earlier. Leave the SSH fingerprint for the moment. 
+
+Now source the file.
+
+```
+. ~/.secrets
+```
+
+If you run ```export```now, you will see the variables put in your shell environment.
+
+```
+bas@devel:~$ vim ~/.secrets
+bas@devel:~$ . ~/.secrets
+bas@devel:~$ export
+<KNIP>
+declare -x DO_ACCESS_TOKEN="IWONTTELLYOU"
+declare -x DO_SSH_FINGERPRINT="I ALSO WILL NOT TELL YOU"
+declare -x HOME="/home/bas"
+declare -x LANG="C.UTF-8"
+declare -x LESSCLOSE="/usr/bin/lesspipe %s %s"
+declare -x LESSOPEN="| /usr/bin/lesspipe %s"
+declare -x LOGNAME="bas"
+<KNIP>
+```
+
+Now we will figure out what to do with the ssh-key. First, let's generate a new one as they are cheap and easier to manage this way.
+
+```
+bas@devel:~$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/bas/.ssh/id_rsa):
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/bas/.ssh/id_rsa.
+Your public key has been saved in /home/bas/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:m1mFtahhK14vJJfmTZ1Di6KTwwYhqLqNCV7g7IWb2ME bas@devel
+The key's randomart image is:
++---[RSA 2048]----+
+|            .    |
+| .         + .   |
+|. . .   o o +    |
+|.  . . . = = o   |
+|..  . o S + =    |
+|+.o  + @ X   .   |
+|o+Eo  O * o      |
+|=*=. . o .       |
+|==o              |
++----[SHA256]-----+
+```
+
+Accept the default values. Now we will write a Terraform manifest to upload the key to Digital Ocean.
+
+```
+bas@devel:~/setup-node$ mkdir setup-node && cd setup-node
+bas@devel:~/setup-node$ cat > key.tf << EOF
+variable "do_token" {}
+
+# Configure the DigitalOcean Provider
+provider "digitalocean" {
+  token = "${var.do_token}"
+}
+
+# Create SSH-Key
+resource "digitalocean_ssh_key" "default" {
+  name       = "Workshop Key"
+  public_key = "${file("/home/bas/.ssh/id_rsa.pub")}"
+}
+EOF
+
+bas@devel:~/setup-node$ terraform init
+bas@devel:~/setup-node$ terraform apply -var "do_token=${DO_ACCESS_TOKEN}"
+```
+
+check terraform.tfstate file that is created, copy the fingerprint ID in the DO_SSH_FINGERPRINT variable and re-source the file.
+
+```
+bas@devel:~$ . ~/.secrets
+bas@devel:~$ export
+declare -x DISPLAY="localhost:10.0"
+declare -x DO_ACCESS_TOKEN=<KNIP>
+declare -x DO_SSH_FINGERPRINT=<KNIP>
+declare -x HOME="/home/bas"
+declare -x LANG="C.UTF-8"
+declare -x LESSCLOSE="/usr/bin/lesspipe %s %s"
+```
+
+All is now setup for the remainder of the workshop.
+
+## Disclaimer
+
+All the secret stuff was setup manually. That's not the intend of this workshop as we want to automate as much as possible. Since access keys and ssh keys are a problem for the security of our account, we put it in manually here. If you want to automate this more, I suggest you look into [vault](https://www.vaultproject.io/)
