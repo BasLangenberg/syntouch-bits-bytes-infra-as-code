@@ -2,30 +2,35 @@
 
 ## Initial provision with Cloud-Init
 
- - [More information about cloud-init](https://www.digitalocean.com/community/tutorials/an-introduction-to-cloud-config-scripting)
+- [More information about cloud-init](https://www.digitalocean.com/community/tutorials/an-introduction-to-cloud-config-scripting)
 
-It's the chicken and the egg all over again. All of the tools used in this workshop are Linux based, but not everybody has access to a Linux machine. It would be very strange to setup a Linux machine manually on this event! So we will automate it as much as possible. 
+It's the chicken and the egg all over again. All of the tools used in this workshop are Linux based, but not everybody has access to a Linux machine. It would be very strange to setup a Linux machine manually on this event! So we will automate it as much as possible.
 
 For this excercise we will use cloud-init. This tool is available at most if not all cloud providers. While provisioning your node using the console, you paste in a YAML file like the template below, instructing cloud-init, which runs on the first boot, to configure your server for you.
 
-```
+```YAML
 #cloud-config
 users:
-  - name: your-name-here
+  - name: YOUR-NAME
     groups: sudo
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     ssh-authorized-keys:
-      - ssh-rsa YOUR-KEY your-name@syntouch.nl
+      - ssh-rsa YOUR-KEY SynTouch-Workshop
+package_upgrade: true
 packages:
  - tmux
  - vim
  - ansible
  - git
-package_upgrade: true
+ - unzip
+runcmd:
+  - [ snap, install, doctl, --classic]
+  - [ curl, -o, /usr/bin/terraform, -LO, http://utils.homecooked.nl/terraform ]
+  - [ chmod, ugo+x, /usr/bin/terraform ]
 power_state:
   timeout: 120
-  delay: "+5"
+  delay: "now"
   message: Reboot after setup
   mode: reboot
 ```
@@ -39,7 +44,7 @@ Now, let's explain this a bit.
 
 Full sample: (Used by your workshop provider guy)
 
-```
+```YAML
 #cloud-config
 users:
   - name: bas
@@ -88,7 +93,7 @@ Figure out what happened by checking /var/log/cloud-init-output.log. It details 
 
 Check if all your tools are there. (Terraform and Ansible)
 
-```
+```SHELL
 bas@devel:~$ terraform --version
 Terraform v0.11.11
 
@@ -111,7 +116,7 @@ We almost comply with the initial server setup recommendation. The only thing we
 
 Create a file called playbook.yml with your favorite editor. This can also be done locally and later uploaded using the file explorer in MobaXTerm.
 
-```
+```YAML
 ---
 - hosts: localhost
   connection: local
@@ -127,7 +132,7 @@ Create a file called playbook.yml with your favorite editor. This can also be do
   handlers:
     - name: Restart ssh
       service: name=sshd state=restarted
-````
+```
 
 There are three parts in this file
 
@@ -137,7 +142,7 @@ There are three parts in this file
 
 Run this playbook
 
-```
+```SHELL
 bas@devel:~$ sudo ansible-playbook  playbook.yml
  [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
@@ -159,7 +164,7 @@ localhost                  : ok=3    changed=2    unreachable=0    failed=0
 
 If you now look in /etc/ssh/sshd_config, you will notice PermitRootLogin set to no. Run the playbook again.
 
-```
+```TEXT
 bas@devel:~$ sudo ansible-playbook  playbook.yml
  [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
@@ -186,37 +191,40 @@ Remember the API key you created during your initial setup? You are going to nee
 
 Create a file called .secrets in your home directory.
 
-```
+```SHELL
 vim ~/.secrets
 ```
 
 Put the following lines in it.
 
-```
+```SHELL
 DO_ACCESS_TOKEN=IWONTTELLYOU
 DO_SSH_FINGERPRINT="I ALSO WILL NOT TELL YOU"
+ANSIBLE_HOST_KEY_CHECKING=FALSE
 
 export DO_ACCESS_TOKEN
 export DO_SSH_FINGERPRINT
+export ANSIBLE_HOST_KEY_CHECKING
 ```
 
 Fill out the Access token your created earlier. Leave the SSH fingerprint for the moment. 
 
 Now source the file.
 
-```
+```SHELL
 . ~/.secrets
 ```
 
 If you run ```export```now, you will see the variables put in your shell environment.
 
-```
+```SHELL
 bas@devel:~$ vim ~/.secrets
 bas@devel:~$ . ~/.secrets
 bas@devel:~$ export
 <KNIP>
 declare -x DO_ACCESS_TOKEN="IWONTTELLYOU"
 declare -x DO_SSH_FINGERPRINT="I ALSO WILL NOT TELL YOU"
+declare -x ANSIBLE_HOST_KEY_CHECKING
 declare -x HOME="/home/bas"
 declare -x LANG="C.UTF-8"
 declare -x LESSCLOSE="/usr/bin/lesspipe %s %s"
@@ -227,7 +235,7 @@ declare -x LOGNAME="bas"
 
 Now we will figure out what to do with the ssh-key. First, let's generate a new one as they are cheap and easier to manage this way.
 
-```
+```SHELL
 bas@devel:~$ ssh-keygen -t rsa
 Generating public/private rsa key pair.
 Enter file in which to save the key (/home/bas/.ssh/id_rsa):
@@ -253,7 +261,7 @@ The key's randomart image is:
 
 Accept the default values. Now we will write a Terraform manifest to upload the key to Digital Ocean.
 
-```
+```SHELL
 bas@devel:~/setup-node$ mkdir setup-node && cd setup-node
 bas@devel:~/setup-node$ cat > key.tf << EOF
 variable "do_token" {}
@@ -276,7 +284,7 @@ bas@devel:~/setup-node$ terraform apply -var "do_token=${DO_ACCESS_TOKEN}"
 
 check terraform.tfstate file that is created, copy the fingerprint ID in the DO_SSH_FINGERPRINT variable and re-source the file.
 
-```
+```SHELL
 bas@devel:~$ . ~/.secrets
 bas@devel:~$ export
 declare -x DISPLAY="localhost:10.0"
