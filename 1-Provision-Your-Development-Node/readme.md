@@ -300,3 +300,7 @@ All is now setup for the remainder of the workshop.
 ## Disclaimer
 
 All the secret stuff was setup manually. That's not the intend of this workshop as we want to automate as much as possible. Since access keys and ssh keys are a problem for the security of our account, we put it in manually here. If you want to automate this more, I suggest you look into [vault](https://www.vaultproject.io/)
+
+## A small note on editing text in a Linux server
+
+Some people are pretty experienced using text editors like Vim and Nano on a Linux commandline interface. Other people like the notepad style more. Mobaxterm provides both options. You can use the buildin text editor to edit text like you used to, but you can also use the build in scp client to copy files locally and edit them on your laptops file system.
