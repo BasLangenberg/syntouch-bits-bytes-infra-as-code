@@ -458,7 +458,7 @@ In the next tutorial we will use the same code to decouple MySQL and the webserv
 Clone the pre-created git repository containing all the code outlined in this tutorial and apply that.
 
 ```SHELL
- $ git clone https://github.com/BasLangenberg/ansible-wordpress.git && cd ansible-wordpress
+ $ git clone https://github.com/BasLangenberg/ansible-wordpress.git && cd ansible-wordpress && git checkout v1.0
  $ terraform apply -var "do_token=${DO_ACCESS_TOKEN}" -var "ssh_fingerprint=${DO_SSH_FINGERPRINT}"
 ```
 
