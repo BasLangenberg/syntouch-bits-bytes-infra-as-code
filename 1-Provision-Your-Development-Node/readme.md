@@ -26,7 +26,7 @@ packages:
  - unzip
 runcmd:
   - [ snap, install, doctl, --classic]
-  - [ curl, -o, /usr/bin/terraform, -LO, http://utils.homecooked.nl/terraform ]
+  - [ curl, -o, /usr/bin/terraform, -LO, "http://utils.homecooked.nl/terraform" ]
   - [ chmod, ugo+x, /usr/bin/terraform ]
 power_state:
   timeout: 120
@@ -62,7 +62,7 @@ packages:
  - unzip
 runcmd:
   - [ snap, install, doctl, --classic]
-  - [ curl, -o, /usr/bin/terraform, -LO, http://utils.homecooked.nl/terraform ]
+  - [ curl, -o, /usr/bin/terraform, -LO, "http://utils.homecooked.nl/terraform" ]
   - [ chmod, ugo+x, /usr/bin/terraform ]
 power_state:
   timeout: 120

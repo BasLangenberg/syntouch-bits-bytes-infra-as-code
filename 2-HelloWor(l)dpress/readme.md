@@ -204,7 +204,7 @@ The roles defined need to be installed. Ansible code bases normally have these l
 
 ```SHELL
 bas@devel:~/ansible-wordpress$ mkdir roles
-bas@devel:~/ansible-wordpress$ cat roles/requirements.yml << EOF
+bas@devel:~/ansible-wordpress$ cat > roles/requirements.yml << EOF
 - src: geerlingguy.mysql
 - src: geerlingguy.php
 - src: geerlingguy.apache
@@ -237,6 +237,7 @@ apache_vhosts:
 wp_mysql_db: wordpress
 wp_mysql_user: wordpress
 wp_mysql_password: similarly-secure-password
+wp_mysql_host: localhost
 php_packages:
   - php
   - php-cli
@@ -253,7 +254,7 @@ I already put in some variables we will use in the Wordpress specific part. Ther
 Almost done! We need to define which host will be provisioned. You put this in a hosts file.
 
 ```SHELL
-bas@devel:~/ansible-wordpress$ cat hosts << EOF
+bas@devel:~/ansible-wordpress$ cat > hosts << EOF
 [wordpress]
 188.166.114.106 ansible_user=root ansible_python_interpreter=/usr/bin/python3
 EOF
@@ -307,8 +308,7 @@ Edit site.yml and add your role.
 Now define the variables used in the playbook in roles/*.wordpress/default/main.yml
 
 ```SHELL
-bas@devel:~/ansible-wordpress$ cat roles/*.wordpress/defaults/main.yml << EOF
->
+bas@devel:~/ansible-wordpress$ cat > roles/*.wordpress/defaults/main.yml << EOF
 ---
 # vars file for baslangenberg.wordpress
 wordpress_dir: /var/www/wordpress

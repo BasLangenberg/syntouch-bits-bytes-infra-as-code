@@ -63,6 +63,12 @@ bas@devel:~/instant-kubernetes$ ansible-galaxy install -r roles/requirements.yml
 - geerlingguy.docker (2.5.2) was installed successfully
 ```
 
+Let's generate the host file this time.
+
+```SHELL
+bas@verify:~/instant-kubernetes$ python generate_hosts_file.py > hosts
+```
+
 Now install Kubernetes. This takes a couple of minutes.
 
 ```SHELL
@@ -104,6 +110,7 @@ Now we will scale the system by adding more workers. Edit infrastructure
 
 - Edit infrastructure.tf. Change the amount of nodes under workers to 5
 - Run Terraform
+- regenerate your hosts file
 - Run Ansible
 - Check your nodes
 
